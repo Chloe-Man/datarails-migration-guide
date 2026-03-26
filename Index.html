@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Headcount Data Source Migration Guide — ADP → Paylocity</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --ink: #1A1714;
+    --ink-soft: #5C5751;
+    --ink-muted: #9A9590;
+    --accent: #C84B2F;
+    --accent-light: #F5E8E4;
+    --gold: #B8960C;
+    --gold-light: #FBF6E1;
+    --green: #2D6A4F;
+    --green-light: #E8F4EF;
+    --border: #E2DDD7;
+    --step-w: 680px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    background: var(--ink);
+    color: #fff;
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .site-header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    border: 60px solid rgba(200,75,47,0.15);
+  }
+  .site-header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 30%;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    border: 40px solid rgba(255,255,255,0.04);
+  }
+  .header-inner { max-width: 860px; margin: 0 auto; position: relative; }
+  .header-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .header-tag::before { content: ''; display: block; width: 24px; height: 1px; background: var(--accent); }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.15;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  h1 em { color: var(--accent); font-style: italic; }
+  .header-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.6);
+    max-width: 520px;
+    line-height: 1.7;
+  }
+  .migration-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-top: 28px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+  }
+  .migration-badge span { color: #fff; font-weight: 600; }
+  .arrow-icon { color: var(--accent); font-weight: 700; }
+
+  /* ── Progress Nav ── */
+  .progress-nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .progress-nav-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .progress-nav-inner::-webkit-scrollbar { display: none; }
+  .nav-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 16px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .nav-pill:hover { color: var(--ink); border-bottom-color: var(--border); }
+  .nav-pill.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .nav-pill.active .nav-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Main Layout ── */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 56px 40px 80px;
+  }
+
+  /* ── Overview Box ── */
+  .overview-box {
+    background: var(--gold-light);
+    border: 1px solid #E8D98A;
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 48px;
+  }
+  .overview-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    margin-bottom: 10px;
+    color: var(--gold);
+  }
+  .overview-box p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.75;
+  }
+  .overview-box p + p { margin-top: 8px; }
+
+  /* ── Sections ── */
+  .section {
+    margin-bottom: 64px;
+    scroll-margin-top: 60px;
+  }
+  .section-header {
+    display: flex; align-items: flex-start; gap: 20px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: var(--accent-light);
+    border: 1px solid rgba(200,75,47,0.2);
+    border-radius: 4px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .section-title-group h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .section-title-group p {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  /* ── Step Cards ── */
+  .steps { display: flex; flex-direction: column; gap: 16px; }
+
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .step-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+
+  .step-card-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 22px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .step-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .step-icon.red { background: var(--accent-light); }
+  .step-icon.gold { background: var(--gold-light); }
+  .step-icon.green { background: var(--green-light); }
+  .step-icon.blue { background: #EBF3FB; }
+  .step-icon.purple { background: #F0EBFB; }
+
+  .step-title { flex: 1; }
+  .step-title strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .step-title span {
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+
+  .step-toggle {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    color: var(--ink-muted);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .step-card.open .step-toggle {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    transform: rotate(45deg);
+  }
+
+  .step-body {
+    display: none;
+    padding: 0 22px 22px 74px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.75;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+  }
+  .step-card.open .step-body { display: block; }
+
+  .step-body p + p { margin-top: 10px; }
+
+  /* Checklist inside step */
+  .checklist {
+    list-style: none;
+    margin: 14px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .checklist li::before {
+    content: '';
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .checklist li.checked::before {
+    background: var(--green);
+    border-color: var(--green);
+    content: '✓';
+    color: white;
+    font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Callout boxes */
+  .callout {
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+  .callout.warning {
+    background: var(--gold-light);
+    border-left: 3px solid var(--gold);
+    color: #6B5700;
+  }
+  .callout.info {
+    background: #EBF3FB;
+    border-left: 3px solid #3A84C9;
+    color: #1A3F6B;
+  }
+  .callout.critical {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    color: #7A1A08;
+  }
+  .callout.success {
+    background: var(--green-light);
+    border-left: 3px solid var(--green);
+    color: #1A4030;
+  }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* Field mapping table */
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 16px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+  }
+  .field-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 100px;
+  }
+  .badge.tbd { background: var(--gold-light); color: var(--gold); border: 1px solid #E8D98A; }
+  .badge.confirm { background: var(--green-light); color: var(--green); border: 1px solid #A8D5C0; }
+  .badge.critical { background: var(--accent-light); color: var(--accent); border: 1px solid #F0B9AD; }
+
+  /* Owner tags */
+  .owner-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin: 14px 0 4px;
+  }
+  .owner-tag {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-soft);
+  }
+  .owner-tag .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+  }
+  .dot.customer { background: #3A84C9; }
+  .dot.csm { background: var(--accent); }
+  .dot.paylocity { background: var(--gold); }
+  .dot.datarelse { background: var(--green); }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 40px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    border-top: 1px solid var(--border);
+  }
+  footer strong { color: var(--ink-soft); }
+
+  @media (max-width: 600px) {
+    .site-header { padding: 32px 20px; }
+    main { padding: 32px 20px 60px; }
+    .progress-nav { padding: 0 16px; }
+    .step-body { padding-left: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-tag">Datarails · Customer Migration Guide</div>
+    <h1>Switching Your Headcount<br>Data Source: <em>ADP → Paylocity</em></h1>
+    <p class="header-sub">A step-by-step guide to safely migrating your headcount data integration in Datarails — covering what to prepare, what to validate, and what to watch out for.</p>
+    <div class="migration-badge">
+      <span>ADP</span>
+      <span class="arrow-icon">→</span>
+      <span>Paylocity</span>
+      &nbsp;·&nbsp; Datarails Headcount Forecasting
+    </div>
+  </div>
+</header>
+
+<!-- Sticky Nav -->
+<nav class="progress-nav">
+  <div class="progress-nav-inner">
+    <a class="nav-pill active" href="#s1" onclick="setActive(this)">
+      <span class="nav-num">1</span> Audit ADP
+    </a>
+    <a class="nav-pill" href="#s2" onclick="setActive(this)">
+      <span class="nav-num">2</span> Field Mapping
+    </a>
+    <a class="nav-pill" href="#s3" onclick="setActive(this)">
+      <span class="nav-num">3</span> Paylocity Readiness
+    </a>
+    <a class="nav-pill" href="#s4" onclick="setActive(this)">
+      <span class="nav-num">4</span> Datarails Reconnect
+    </a>
+    <a class="nav-pill" href="#s5" onclick="setActive(this)">
+      <span class="nav-num">5</span> Validate Data
+    </a>
+    <a class="nav-pill" href="#s6" onclick="setActive(this)">
+      <span class="nav-num">6</span> Rebuild Reports
+    </a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- Overview -->
+  <div class="overview-box">
+    <h3>📋 Before You Begin — Understanding This Process</h3>
+    <p>Switching a data source in Datarails is a <strong>two-part challenge</strong>. The first part is technical: setting up the new integration so Datarails can connect to Paylocity. The second part — often overlooked — is ensuring the <strong>data inside Paylocity is clean, complete, and structured in a way that mirrors what your reports and forecasts depend on.</strong></p>
+    <p>Simply connecting Paylocity does not mean your forecasting models will work. Field names, table structures, and data formats may differ. This guide walks you through both parts so nothing gets missed.</p>
+  </div>
+
+  <!-- ── SECTION 1 ── -->
+  <section class="section" id="s1">
+    <div class="section-header">
+      <div class="section-number">STEP 01</div>
+      <div class="section-title-group">
+        <h2>Audit Your Existing ADP Data</h2>
+        <p>Before touching anything, document what you have today. This becomes your reference point for everything that follows.</p>
+      </div>
+    </div>
+    <div class="steps">
+
+      <div class="step-card open">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon red">📂</div>
+          <div class="step-title">
+            <strong>Identify Which ADP Tables & Fields Are in Use</strong>
+            <span>Log every table and field currently pulled into Datarails from ADP</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>In Datarails, navigate to your existing ADP integration and review which tables are connected. For each table, document the fields that are actively referenced in your ETL steps, formulas, or reports.</p>
+          <div class="callout warning">
+            <strong>📌 Customer Homework</strong>
+            Pull a full list of ADP tables and fields currently used in Datarails. Your Datarails admin or the ETL pipeline builder should be able to export this. If you're unsure, check your existing headcount model and trace every data reference back to its source field.
+          </div>
+          <p><strong>Common critical fields to look for in headcount forecasting:</strong></p>
+          <ul class="checklist" id="cl1">
+            <li onclick="toggleCheck(this)">Employee ID (unique identifier)</li>
+            <li onclick="toggleCheck(this)">Full Name / Legal Name</li>
+            <li onclick="toggleCheck(this)">Department / Cost Center</li>
+            <li onclick="toggleCheck(this)">Job Title / Job Code</li>
+            <li onclick="toggleCheck(this)">Employment Type (FT, PT, Contractor)</li>
+            <li onclick="toggleCheck(this)">FTE % (Full-Time Equivalent)</li>
+            <li onclick="toggleCheck(this)">Hire Date</li>
+            <li onclick="toggleCheck(this)">Termination Date</li>
+            <li onclick="toggleCheck(this)">Location / Work Site</li>
+            <li onclick="toggleCheck(this)">Manager / Reporting Structure</li>
+            <li onclick="toggleCheck(this)">Compensation / Salary Band (if used in forecast)</li>
+            <li onclick="toggleCheck(this)">Status (Active, On Leave, Terminated)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon red">🗂️</div>
+          <div class="step-title">
+            <strong>Document Current ETL Logic & Transformations</strong>
+            <span>Capture how ADP data is cleaned or transformed today</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>Beyond raw fields, your Datarails pipelines may include transformation logic: renaming fields, filtering active employees, normalizing department names, or joining tables. All of this depends on ADP's specific structure.</p>
+          <div class="callout info">
+            <strong>ℹ️ Why This Matters</strong>
+            When you switch to Paylocity, even if the data is conceptually the same, the field names and table structure may be different. Without knowing your current transformations, you won't know what to update.
+          </div>
+          <ul class="checklist" id="cl2">
+            <li onclick="toggleCheck(this)">Export or screenshot all Datarails ETL steps that reference ADP</li>
+            <li onclick="toggleCheck(this)">Note any calculated fields or formulas that use ADP field names directly</li>
+            <li onclick="toggleCheck(this)">Identify any filters (e.g., "Status = Active") that rely on ADP-specific values</li>
+            <li onclick="toggleCheck(this)">List any lookup/join logic between ADP tables</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 2 ── -->
+  <section class="section" id="s2">
+    <div class="section-header">
+      <div class="section-number">STEP 02</div>
+      <div class="section-title-group">
+        <h2>Map ADP Fields to Paylocity Equivalents</h2>
+        <p>Create a crosswalk between the two systems so nothing gets lost in translation.</p>
+      </div>
+    </div>
+    <div class="steps">
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon gold">🔁</div>
+          <div class="step-title">
+            <strong>Build a Field Mapping Document</strong>
+            <span>Side-by-side comparison of ADP vs. Paylocity field names and structures</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>Once the Paylocity implementation is far enough along, you'll need to compare the two systems field-by-field. The goal is to confirm that every ADP field you currently use has a Paylocity equivalent — and identify any gaps.</p>
+
+          <table class="field-table">
+            <thead>
+              <tr>
+                <th>ADP Field (Example)</th>
+                <th>Paylocity Equivalent</th>
+                <th>Match Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>EE_ID</code></td><td><code>EmployeeID</code></td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td><code>DEPT_CODE</code></td><td><code>DepartmentCode</code></td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td><code>HIRE_DT</code></td><td><code>HireDate</code></td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td><code>TERM_DT</code></td><td><code>TermDate</code></td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td><code>EMP_STATUS</code></td><td><em>Confirm with Paylocity</em></td><td><span class="badge critical">Critical</span></td></tr>
+              <tr><td><code>FTE_PCT</code></td><td><em>Confirm with Paylocity</em></td><td><span class="badge critical">Critical</span></td></tr>
+              <tr><td><code>COST_CTR</code></td><td><em>Confirm with Paylocity</em></td><td><span class="badge tbd">TBD</span></td></tr>
+            </tbody>
+          </table>
+
+          <div class="callout warning">
+            <strong>📌 Customer Homework</strong>
+            Share this table with your Paylocity implementation team. Ask them to fill in the Paylocity column for each field, and flag any fields that don't exist yet or are named differently. This document should be finalized <em>before</em> the Datarails integration goes live.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon gold">⚠️</div>
+          <div class="step-title">
+            <strong>Field Names vs. Field Values — Know the Difference</strong>
+            <span>Renaming a column is easy. Mismatched values will break your models.</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>There are two layers to field compatibility. It's important to understand which one Datarails can help with — and which one must be resolved in Paylocity <em>before</em> the integration goes live.</p>
+
+          <div class="callout success">
+            <strong>✅ Field Names — Easy Fix via Datarails Data Mapper</strong>
+            If ADP calls a column <code>Department</code> and Paylocity calls it <code>Dept</code>, Datarails' data mapper can rename the column on ingestion. This is a simple configuration change and does not require any changes inside Paylocity.
+          </div>
+
+          <div class="callout critical">
+            <strong>🔴 Field Values — Must Match. Cannot Be Fixed in Datarails Alone.</strong>
+            The actual <em>values</em> stored inside key fields must be consistent between ADP and Paylocity. If your Datarails models, formulas, or reports reference a specific value — like a department name — and that value changes in Paylocity, it will silently break lookups, filters, and aggregations across your entire headcount model.
+          </div>
+
+          <p><strong>Real example:</strong></p>
+          <table class="field-table" style="margin: 12px 0 18px;">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>ADP Value (Current)</th>
+                <th>Paylocity Value</th>
+                <th>Impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Department</code></td>
+                <td><code>Procurement</code></td>
+                <td><code>Procurement and Sourcing</code></td>
+                <td><span class="badge critical">Breaks lookups</span></td>
+              </tr>
+              <tr>
+                <td><code>Department</code></td>
+                <td><code>Finance</code></td>
+                <td><code>Finance and Accounting</code></td>
+                <td><span class="badge critical">Breaks lookups</span></td>
+              </tr>
+              <tr>
+                <td><code>Dept</code> → rename to <code>Department</code></td>
+                <td><code>Finance</code></td>
+                <td><code>Finance</code></td>
+                <td><span class="badge confirm">Safe — values match</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p><strong>Key fields where value consistency is critical:</strong></p>
+          <ul class="checklist" id="cl3">
+            <li onclick="toggleCheck(this)">Department / Cost Center names — must match exactly (case-sensitive)</li>
+            <li onclick="toggleCheck(this)">Employee Status values (e.g., "Active", "Terminated" — not "Active Employee" or "Term")</li>
+            <li onclick="toggleCheck(this)">Employment Type codes (e.g., "FT", "PT", "Contractor" — not "Full-Time")</li>
+            <li onclick="toggleCheck(this)">Location / Work Site names</li>
+            <li onclick="toggleCheck(this)">Job Title / Job Code values used in forecast groupings</li>
+          </ul>
+
+          <div class="callout warning">
+            <strong>📌 Customer Homework</strong>
+            Work with your Paylocity implementation team to ensure these key field values are configured to match your existing ADP values exactly. If Paylocity has already set different values, a full remapping and lookup reconfiguration will be required in Datarails — which is significant rework. It is much easier to align the values in Paylocity before go-live.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 3 ── -->
+  <section class="section" id="s3">
+    <div class="section-header">
+      <div class="section-number">STEP 03</div>
+      <div class="section-title-group">
+        <h2>Confirm Paylocity Implementation Readiness</h2>
+        <p>The integration can only be as good as the data behind it. Paylocity must be fully set up first.</p>
+      </div>
+    </div>
+    <div class="steps">
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon blue">🏗️</div>
+          <div class="step-title">
+            <strong>Paylocity Must Be Production-Ready Before Integration</strong>
+            <span>Do not connect Datarails to an incomplete system</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>Connecting Datarails to Paylocity is straightforward — but connecting to a Paylocity instance that is still being configured will result in incomplete, incorrect, or unstable data flowing into your forecasts.</p>
+          <div class="callout critical">
+            <strong>🔴 Important</strong>
+            Datarails can establish a data connection to any configured source. However, the connection does not guarantee the data is correct, complete, or structured the way your models expect. A successful connection ≠ a valid data migration.
+          </div>
+          <p><strong>Before proceeding, confirm with your Paylocity implementation team:</strong></p>
+          <ul class="checklist" id="cl4">
+            <li onclick="toggleCheck(this)">All employee records have been migrated from ADP into Paylocity</li>
+            <li onclick="toggleCheck(this)">Historical data (past hire dates, term dates) is fully loaded — not just current employees</li>
+            <li onclick="toggleCheck(this)">Department / Cost Center structure matches or has been remapped</li>
+            <li onclick="toggleCheck(this)">Paylocity is live and being maintained as the system of record (not ADP)</li>
+            <li onclick="toggleCheck(this)">A Paylocity admin has confirmed the implementation is complete</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon blue">🔌</div>
+          <div class="step-title">
+            <strong>Obtain Paylocity API / Integration Credentials</strong>
+            <span>Datarails will need access credentials to establish the connection</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>To set up the Datarails integration, you will need credentials or connection details from the Paylocity system. Your Paylocity admin or IT team will need to provide these.</p>
+          <ul class="checklist" id="cl5">
+            <li onclick="toggleCheck(this)">Confirm Paylocity API access is enabled for your account</li>
+            <li onclick="toggleCheck(this)">Obtain Client ID and Client Secret (or equivalent credentials)</li>
+            <li onclick="toggleCheck(this)">Confirm which data endpoints are available (e.g., employee, payroll, time)</li>
+            <li onclick="toggleCheck(this)">Verify data permissions — ensure the integration user can access all needed tables</li>
+          </ul>
+          <div class="callout info">
+            <strong>ℹ️ Note</strong>
+            Your Datarails customer success team (that's us!) can guide you through the specific steps to configure the Paylocity connector once credentials are ready.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 4 ── -->
+  <section class="section" id="s4">
+    <div class="section-header">
+      <div class="section-number">STEP 04</div>
+      <div class="section-title-group">
+        <h2>Reconnect the Data Source in Datarails</h2>
+        <p>Set up the new Paylocity integration and rebuild your ETL pipeline.</p>
+      </div>
+    </div>
+    <div class="steps">
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon purple">⚙️</div>
+          <div class="step-title">
+            <strong>Add Paylocity as a New Data Source</strong>
+            <span>Do not delete ADP until Paylocity is fully validated</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <div class="callout success">
+            <strong>✅ Best Practice</strong>
+            Keep your ADP integration active while you set up and test Paylocity in parallel. Only decommission ADP once you have confirmed that Paylocity data is complete and your models are working correctly.
+          </div>
+          <ul class="checklist" id="cl6">
+            <li onclick="toggleCheck(this)">In Datarails, add Paylocity as a new integration (do not replace ADP yet)</li>
+            <li onclick="toggleCheck(this)">Perform an initial data sync and review the raw tables available</li>
+            <li onclick="toggleCheck(this)">Confirm the expected tables and fields are present in the Paylocity dataset</li>
+            <li onclick="toggleCheck(this)">Compare row counts between ADP and Paylocity for the same employee population</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon purple">🔧</div>
+          <div class="step-title">
+            <strong>Update ETL Steps to Reference Paylocity Fields</strong>
+            <span>Remap transformations using your field mapping document from Step 2</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>Using the field mapping document you built in Step 2, go through each Datarails ETL step that references ADP fields and update them to point to their Paylocity equivalents.</p>
+          <ul class="checklist" id="cl7">
+            <li onclick="toggleCheck(this)">Update all field references from ADP naming to Paylocity naming</li>
+            <li onclick="toggleCheck(this)">Update any filter values that rely on ADP-specific value codes</li>
+            <li onclick="toggleCheck(this)">Update any JOIN keys to use Paylocity's employee identifier</li>
+            <li onclick="toggleCheck(this)">Re-test each ETL step individually before running the full pipeline</li>
+          </ul>
+          <div class="callout warning">
+            <strong>📌 Tip</strong>
+            Make a copy of your existing ETL pipeline before making changes. This gives you a rollback point if something goes wrong during the transition.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 5 ── -->
+  <section class="section" id="s5">
+    <div class="section-header">
+      <div class="section-number">STEP 05</div>
+      <div class="section-title-group">
+        <h2>Validate the New Data</h2>
+        <p>Do not trust the new data until you have compared it against what you know to be true.</p>
+      </div>
+    </div>
+    <div class="steps">
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon green">✅</div>
+          <div class="step-title">
+            <strong>Run a Side-by-Side Data Comparison</strong>
+            <span>ADP vs. Paylocity — same date range, same population</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>The best way to validate the new data is to run your existing reports using Paylocity data and compare the results to the last known-good output from ADP.</p>
+          <ul class="checklist" id="cl8">
+            <li onclick="toggleCheck(this)">Total active headcount — does it match between ADP and Paylocity?</li>
+            <li onclick="toggleCheck(this)">Headcount by department — do the breakdowns align?</li>
+            <li onclick="toggleCheck(this)">New hires and terminations in a given month — do counts match?</li>
+            <li onclick="toggleCheck(this)">Any employees in ADP that are missing from Paylocity?</li>
+            <li onclick="toggleCheck(this)">Any unexpected employees appearing in Paylocity that weren't in ADP?</li>
+          </ul>
+          <div class="callout critical">
+            <strong>🔴 Red Flag</strong>
+            If headcount numbers differ between the two systems, do not proceed. This indicates either incomplete data migration in Paylocity, or a structural mismatch in how active employees are defined. Escalate to the Paylocity implementation team before going live.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon green">📊</div>
+          <div class="step-title">
+            <strong>Validate Historical Data Integrity</strong>
+            <span>Forecasting depends on history — make sure it transferred correctly</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>Headcount forecasting models often depend on historical trends. Confirm that Paylocity contains the historical records your models need — not just current employees.</p>
+          <ul class="checklist" id="cl9">
+            <li onclick="toggleCheck(this)">Historical hire and term dates are present for past employees</li>
+            <li onclick="toggleCheck(this)">Department history is available (if employees changed departments)</li>
+            <li onclick="toggleCheck(this)">Data goes back far enough for your forecasting horizon (e.g., 2–3 years)</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 6 ── -->
+  <section class="section" id="s6">
+    <div class="section-header">
+      <div class="section-number">STEP 06</div>
+      <div class="section-title-group">
+        <h2>Rebuild or Update Existing Forecasts & Reports</h2>
+        <p>Once data is validated, update your Datarails models to use Paylocity as the live source.</p>
+      </div>
+    </div>
+    <div class="steps">
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon red">📈</div>
+          <div class="step-title">
+            <strong>Update Headcount Forecasting Models</strong>
+            <span>Reconnect forecast logic to Paylocity as the source of record</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <ul class="checklist" id="cl10">
+            <li onclick="toggleCheck(this)">Identify all reports and dashboards that reference ADP headcount data</li>
+            <li onclick="toggleCheck(this)">Update data source references from ADP to Paylocity in each model</li>
+            <li onclick="toggleCheck(this)">Re-run forecasts and compare outputs to last ADP-based version</li>
+            <li onclick="toggleCheck(this)">Get sign-off from finance stakeholder that numbers look correct</li>
+            <li onclick="toggleCheck(this)">Archive the ADP-based version before deactivating the integration</li>
+          </ul>
+          <div class="callout success">
+            <strong>✅ Final Step</strong>
+            Once all reports are validated and stakeholders have signed off, you can safely deactivate the ADP integration in Datarails. Keep it inactive (not deleted) for 30 days as a safety net before fully removing it.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Owner Legend -->
+  <div style="margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--border);">
+    <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 12px;">Responsibility Key</p>
+    <div class="owner-row">
+      <div class="owner-tag"><div class="dot customer"></div> Customer (Finance / HR Team)</div>
+      <div class="owner-tag"><div class="dot csm"></div> Datarails CSM</div>
+      <div class="owner-tag"><div class="dot paylocity"></div> Paylocity Implementation Team</div>
+      <div class="owner-tag"><div class="dot datarelse"></div> Datarails Platform</div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Datarails Migration Guide</strong> · ADP → Paylocity Headcount Data Source Switch<br>
+  <span>Prepared by your Datarails Customer Success Team · Questions? Reach out to your CSM.</span>
+</footer>
+
+<script>
+  function toggleCard(header) {
+    const card = header.closest('.step-card');
+    card.classList.toggle('open');
+  }
+
+  function toggleCheck(li) {
+    li.classList.toggle('checked');
+  }
+
+  function setActive(link) {
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+    link.classList.add('active');
+  }
+
+  // Highlight nav on scroll
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-pill');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 80) current = s.id;
+    });
+    navLinks.forEach(l => {
+      l.classList.remove('active');
+      if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
