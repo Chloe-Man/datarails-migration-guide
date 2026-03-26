@@ -385,6 +385,23 @@
   }
   .badge.tbd { background: var(--gold-light); color: var(--gold); border: 1px solid #E8D98A; }
   .badge.confirm { background: var(--green-light); color: var(--green); border: 1px solid #A8D5C0; }
+
+  /* Paylocity confirmation toggle */
+  .confirm-cell { white-space: nowrap; }
+  .confirm-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 500;
+    padding: 4px 8px; border-radius: 100px; cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--ink-muted);
+    transition: all 0.15s; user-select: none;
+    letter-spacing: 0.02em;
+  }
+  .confirm-btn:hover { border-color: var(--ink-muted); color: var(--ink); }
+  .confirm-btn.exact   { background: var(--green-light);  color: var(--green);  border-color: #A8D5C0; }
+  .confirm-btn.diff    { background: var(--gold-light);   color: var(--gold);   border-color: #E8D98A; }
+  .confirm-btn.missing { background: var(--accent-light); color: var(--accent); border-color: #F0B9AD; }
+  .confirm-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
   .badge.critical { background: var(--accent-light); color: var(--accent); border: 1px solid #F0B9AD; }
 
   /* Owner tags */
@@ -454,16 +471,16 @@
       <span class="nav-num">2</span> Field Mapping
     </a>
     <a class="nav-pill" href="#s3" onclick="setActive(this)">
-      <span class="nav-num">3</span> Paylocity Readiness
+      <span class="nav-num">3</span> Build Reports
     </a>
     <a class="nav-pill" href="#s4" onclick="setActive(this)">
-      <span class="nav-num">4</span> Datarails Reconnect
+      <span class="nav-num">4</span> SFTP Setup
     </a>
     <a class="nav-pill" href="#s5" onclick="setActive(this)">
-      <span class="nav-num">5</span> Validate Data
+      <span class="nav-num">5</span> Test &amp; Validate
     </a>
     <a class="nav-pill" href="#s6" onclick="setActive(this)">
-      <span class="nav-num">6</span> Rebuild Reports
+      <span class="nav-num">6</span> Recreate Mapping
     </a>
   </div>
 </nav>
@@ -490,60 +507,89 @@
 
       <div class="step-card open">
         <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon red">📂</div>
+          <div class="step-icon red">&#128194;</div>
           <div class="step-title">
-            <strong>Identify Which ADP Tables & Fields Are in Use</strong>
-            <span>Log every table and field currently pulled into Datarails from ADP</span>
+            <strong>Confirmed ADP Fields In Use</strong>
+            <span>Two ADP data sources identified &mdash; both must be migrated to Paylocity</span>
           </div>
           <div class="step-toggle">+</div>
         </div>
         <div class="step-body">
-          <p>In Datarails, navigate to your existing ADP integration and review which tables are connected. For each table, document the fields that are actively referenced in your ETL steps, formulas, or reports.</p>
-          <div class="callout warning">
-            <strong>📌 Customer Homework</strong>
-            Pull a full list of ADP tables and fields currently used in Datarails. Your Datarails admin or the ETL pipeline builder should be able to export this. If you're unsure, check your existing headcount model and trace every data reference back to its source field.
+
+          <div class="callout info">
+            <strong>&#8505;&#65039; Two ADP Sources — Here's How They're Structured</strong>
+            All 15 confirmed fields come from <strong>two ADP reports</strong>: the Employee Information Report (which includes both employee fields <em>and</em> benefits cost fields in a single report) and the 401k Report. Both need a Paylocity equivalent.
           </div>
-          <p><strong>Common critical fields to look for in headcount forecasting:</strong></p>
-          <ul class="checklist" id="cl1">
-            <li onclick="toggleCheck(this)">Employee ID (unique identifier)</li>
-            <li onclick="toggleCheck(this)">Full Name / Legal Name</li>
-            <li onclick="toggleCheck(this)">Department / Cost Center</li>
-            <li onclick="toggleCheck(this)">Job Title / Job Code</li>
-            <li onclick="toggleCheck(this)">Employment Type (FT, PT, Contractor)</li>
-            <li onclick="toggleCheck(this)">FTE % (Full-Time Equivalent)</li>
-            <li onclick="toggleCheck(this)">Hire Date</li>
-            <li onclick="toggleCheck(this)">Termination Date</li>
-            <li onclick="toggleCheck(this)">Location / Work Site</li>
-            <li onclick="toggleCheck(this)">Manager / Reporting Structure</li>
-            <li onclick="toggleCheck(this)">Compensation / Salary Band (if used in forecast)</li>
-            <li onclick="toggleCheck(this)">Status (Active, On Leave, Terminated)</li>
-          </ul>
+
+          <div class="callout critical" style="margin-top: 12px;">
+            <strong>&#128308; Associate ID Is the Spine of the Entire Model</strong>
+            <code>Associate ID</code> from the 401k Report is the <strong>lookup key</strong> that joins 401k data to employee records in Datarails. If Paylocity uses different ID values &mdash; or a different ID field entirely &mdash; every cross-source lookup breaks simultaneously. This must be confirmed before go-live.
+          </div>
+
+          <p style="margin: 20px 0 10px; font-weight: 500;">Source 1 &mdash; Employee Information Report <span style="font-weight:400; color: var(--ink-muted); font-size:13px;">(includes employee fields + benefits costs)</span></p>
+          <table class="field-table">
+            <thead>
+              <tr><th>#</th><th>ADP Field</th><th>Purpose</th><th>Paylocity Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td><code>Hire Date</code></td><td>Headcount tracking, tenure</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td>2</td><td><code>Legal First Name</code></td><td>Employee identification</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td>3</td><td><code>Legal Last Name</code></td><td>Employee identification</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td>4</td><td><code>Annual Salary</code></td><td>Compensation forecasting</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td>5</td><td><code>Position Status</code></td><td>Active vs. terminated filter</td><td><span class="badge critical">Values must match</span></td></tr>
+              <tr><td>6</td><td><code>Home Department Description</code></td><td>Dept-level reporting &amp; grouping</td><td><span class="badge critical">Values must match</span></td></tr>
+              <tr><td>7</td><td><code>Termination Date</code></td><td>Attrition &amp; offboarding tracking</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td>8</td><td><code>Worker Category</code></td><td>FT / PT / Contractor classification</td><td><span class="badge critical">Values must match</span></td></tr>
+              <tr style="background: var(--gold-light);"><td>9</td><td><code>Dental_Cost</code></td><td>Benefits cost forecasting</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr style="background: var(--gold-light);"><td>10</td><td><code>Medical_Cost</code></td><td>Benefits cost forecasting</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr style="background: var(--gold-light);"><td>11</td><td><code>Vision_Cost</code></td><td>Benefits cost forecasting</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr style="background: var(--gold-light);"><td>12</td><td><code>LTD_Cost</code></td><td>Benefits cost forecasting</td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr style="background: var(--gold-light);"><td>13</td><td><code>Basic Life_Cost</code></td><td>Benefits cost forecasting</td><td><span class="badge tbd">TBD</span></td></tr>
+            </tbody>
+          </table>
+          <div class="callout warning" style="margin-top: 12px;">
+            <strong>&#128204; Paylocity Question &mdash; Benefits Fields</strong>
+            In ADP, the benefits cost fields are included directly in the Employee Information Report. <strong>Confirm with your Paylocity team: will these benefits fields also be available within the employee report, or will they come as a separate report?</strong> If separate, a second integration will be needed and the benefits fields will need to be joined to employee records in Datarails — similar to how the 401k data is joined today.
+          </div>
+
+          <p style="margin: 20px 0 10px; font-weight: 500;">Source 2 &mdash; 401k Report</p>
+          <div class="callout critical">
+            <strong>&#128308; Associate ID &mdash; The Lookup Key</strong>
+            This report uses <code>Associate ID</code> as the key field to return data into Datarails. The ID values in Paylocity must match ADP exactly, or all lookups will silently return blank or wrong data.
+          </div>
+          <table class="field-table">
+            <thead>
+              <tr><th>ADP Field</th><th>Role</th><th>Paylocity Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Associate ID</code></td>
+                <td>&#128273; Primary lookup key &mdash; joins 401k data to employee records</td>
+                <td><span class="badge critical">ID values must match ADP exactly</span></td>
+              </tr>
+              <tr>
+                <td><code>Employee 401K Contribution %</code></td>
+                <td>Per-employee 401k contribution rate for benefits cost modeling</td>
+                <td><span class="badge tbd">TBD</span></td>
+              </tr>
+              <tr>
+                <td><code>Employee ROTH Contribution %</code></td>
+                <td>Per-employee Roth contribution rate for benefits cost modeling</td>
+                <td><span class="badge tbd">TBD</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout warning" style="margin-top: 12px;">
+            <strong>&#128204; Paylocity Questions &mdash; 401k Report</strong>
+            (1) What is Paylocity&rsquo;s equivalent of Associate ID &mdash; and will the ID values carry over from ADP or change? (2) Does Paylocity expose a 401k contribution report via its data integration? (3) Are <code>Employee 401K Contribution %</code> and <code>Employee ROTH Contribution %</code> stored as percentages or dollar amounts in Paylocity?
+          </div>
         </div>
       </div>
 
-      <div class="step-card">
-        <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon red">🗂️</div>
-          <div class="step-title">
-            <strong>Document Current ETL Logic & Transformations</strong>
-            <span>Capture how ADP data is cleaned or transformed today</span>
+      <div class="callout info" style="margin-top: 8px;">
+            <strong>&#8505;&#65039; Note</strong>
+            Review your current Datarails ADP integration to check whether any additional columns are mapped beyond the fields listed above. If so, those fields will also need Paylocity equivalents before the migration can go live.
           </div>
-          <div class="step-toggle">+</div>
-        </div>
-        <div class="step-body">
-          <p>Beyond raw fields, your Datarails pipelines may include transformation logic: renaming fields, filtering active employees, normalizing department names, or joining tables. All of this depends on ADP's specific structure.</p>
-          <div class="callout info">
-            <strong>ℹ️ Why This Matters</strong>
-            When you switch to Paylocity, even if the data is conceptually the same, the field names and table structure may be different. Without knowing your current transformations, you won't know what to update.
-          </div>
-          <ul class="checklist" id="cl2">
-            <li onclick="toggleCheck(this)">Export or screenshot all Datarails ETL steps that reference ADP</li>
-            <li onclick="toggleCheck(this)">Note any calculated fields or formulas that use ADP field names directly</li>
-            <li onclick="toggleCheck(this)">Identify any filters (e.g., "Status = Active") that rely on ADP-specific values</li>
-            <li onclick="toggleCheck(this)">List any lookup/join logic between ADP tables</li>
-          </ul>
-        </div>
-      </div>
 
     </div>
   </section>
@@ -571,28 +617,71 @@
         <div class="step-body">
           <p>Once the Paylocity implementation is far enough along, you'll need to compare the two systems field-by-field. The goal is to confirm that every ADP field you currently use has a Paylocity equivalent — and identify any gaps.</p>
 
+          <p style="margin: 0 0 10px; font-weight: 500;">Source 1 &mdash; Employee Information Report</p>
           <table class="field-table">
             <thead>
               <tr>
-                <th>ADP Field (Example)</th>
-                <th>Paylocity Equivalent</th>
-                <th>Match Status</th>
+                <th>ADP Field</th>
+                <th>Paylocity Field Name</th>
+                <th>Value Match Required?</th>
+                <th>Paylocity Confirmation</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>EE_ID</code></td><td><code>EmployeeID</code></td><td><span class="badge tbd">TBD</span></td></tr>
-              <tr><td><code>DEPT_CODE</code></td><td><code>DepartmentCode</code></td><td><span class="badge tbd">TBD</span></td></tr>
-              <tr><td><code>HIRE_DT</code></td><td><code>HireDate</code></td><td><span class="badge tbd">TBD</span></td></tr>
-              <tr><td><code>TERM_DT</code></td><td><code>TermDate</code></td><td><span class="badge tbd">TBD</span></td></tr>
-              <tr><td><code>EMP_STATUS</code></td><td><em>Confirm with Paylocity</em></td><td><span class="badge critical">Critical</span></td></tr>
-              <tr><td><code>FTE_PCT</code></td><td><em>Confirm with Paylocity</em></td><td><span class="badge critical">Critical</span></td></tr>
-              <tr><td><code>COST_CTR</code></td><td><em>Confirm with Paylocity</em></td><td><span class="badge tbd">TBD</span></td></tr>
+              <tr><td><code>Hire Date</code></td><td><em>Confirm with Paylocity team</em></td><td>No</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Legal First Name</code></td><td><em>Confirm with Paylocity team</em></td><td>No</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Legal Last Name</code></td><td><em>Confirm with Paylocity team</em></td><td>No</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Annual Salary</code></td><td><em>Confirm with Paylocity team</em></td><td>No</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Position Status</code></td><td><em>Confirm with Paylocity team</em></td><td><strong>Yes &mdash; values must match exactly</strong></td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Home Department Description</code></td><td><em>Confirm with Paylocity team</em></td><td><strong>Yes &mdash; values must match exactly</strong></td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Termination Date</code></td><td><em>Confirm with Paylocity team</em></td><td>No</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Worker Category</code></td><td><em>Confirm with Paylocity team</em></td><td><strong>Yes &mdash; values must match exactly</strong></td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
             </tbody>
           </table>
 
-          <div class="callout warning">
-            <strong>📌 Customer Homework</strong>
-            Share this table with your Paylocity implementation team. Ask them to fill in the Paylocity column for each field, and flag any fields that don't exist yet or are named differently. This document should be finalized <em>before</em> the Datarails integration goes live.
+          <p style="margin: 20px 0 10px; font-weight: 500;">Benefits Cost Fields <span style="font-weight:400; color: var(--ink-muted); font-size:13px;">(part of Employee Information Report in ADP)</span></p>
+          <table class="field-table">
+            <thead>
+              <tr>
+                <th>ADP Field</th>
+                <th>Paylocity Field Name</th>
+                <th>Value Match Required?</th>
+                <th>Paylocity Confirmation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>Dental_Cost</code></td><td><em>Confirm with Paylocity team</em></td><td>No &mdash; numeric value</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Medical_Cost</code></td><td><em>Confirm with Paylocity team</em></td><td>No &mdash; numeric value</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Vision_Cost</code></td><td><em>Confirm with Paylocity team</em></td><td>No &mdash; numeric value</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>LTD_Cost</code></td><td><em>Confirm with Paylocity team</em></td><td>No &mdash; numeric value</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Basic Life_Cost</code></td><td><em>Confirm with Paylocity team</em></td><td>No &mdash; numeric value</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+            </tbody>
+          </table>
+          <div class="callout warning" style="margin-top: 12px;">
+            <strong>&#128204; Key Question for Paylocity</strong>
+            In ADP, these benefits cost fields are included directly within the Employee Information Report. Confirm with your Paylocity team whether these fields will also be part of their employee report, or delivered as a separate report. If separate, an additional integration and join configuration will be required in Datarails.
+          </div>
+
+          <p style="margin: 20px 0 10px; font-weight: 500;">Source 2 &mdash; 401k Report</p>
+          <table class="field-table">
+            <thead>
+              <tr>
+                <th>ADP Field</th>
+                <th>Paylocity Field Name</th>
+                <th>Value Match Required?</th>
+                <th>Paylocity Confirmation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>Associate ID</code></td><td><em>Confirm with Paylocity team</em></td><td><strong>Yes &mdash; ID values must be identical</strong></td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Employee 401K Contribution %</code></td><td><em>Confirm with Paylocity team</em></td><td>Confirm stored as % not $</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+              <tr><td><code>Employee ROTH Contribution %</code></td><td><em>Confirm with Paylocity team</em></td><td>Confirm stored as % not $</td><td class="confirm-cell"><span class="confirm-btn" onclick="cycleConfirm(this)"><span class="confirm-dot"></span>Unconfirmed</span></td></tr>
+            </tbody>
+          </table>
+
+          <div class="callout warning" style="margin-top: 12px;">
+            <strong>&#128204; Customer Homework</strong>
+            Share these tables with your Paylocity implementation team. Ask them to fill in the Paylocity field name column for each row, flag any fields that don&rsquo;t exist, and confirm the benefits report structure. Finalize this before the Datarails integration goes live.
           </div>
         </div>
       </div>
@@ -651,18 +740,9 @@
             </tbody>
           </table>
 
-          <p><strong>Key fields where value consistency is critical:</strong></p>
-          <ul class="checklist" id="cl3">
-            <li onclick="toggleCheck(this)">Department / Cost Center names — must match exactly (case-sensitive)</li>
-            <li onclick="toggleCheck(this)">Employee Status values (e.g., "Active", "Terminated" — not "Active Employee" or "Term")</li>
-            <li onclick="toggleCheck(this)">Employment Type codes (e.g., "FT", "PT", "Contractor" — not "Full-Time")</li>
-            <li onclick="toggleCheck(this)">Location / Work Site names</li>
-            <li onclick="toggleCheck(this)">Job Title / Job Code values used in forecast groupings</li>
-          </ul>
-
           <div class="callout warning">
-            <strong>📌 Customer Homework</strong>
-            Work with your Paylocity implementation team to ensure these key field values are configured to match your existing ADP values exactly. If Paylocity has already set different values, a full remapping and lookup reconfiguration will be required in Datarails — which is significant rework. It is much easier to align the values in Paylocity before go-live.
+            <strong>&#128204; Customer Homework</strong>
+            Work with your Paylocity implementation team to ensure key field values — particularly <code>Position Status</code>, <code>Home Department Description</code>, and <code>Worker Category</code> — are configured to match your existing ADP values exactly. If Paylocity has already set different values, a full remapping and lookup reconfiguration will be required in Datarails. It is much easier to align the values in Paylocity before go-live.
           </div>
         </div>
       </div>
@@ -675,59 +755,34 @@
     <div class="section-header">
       <div class="section-number">STEP 03</div>
       <div class="section-title-group">
-        <h2>Confirm Paylocity Implementation Readiness</h2>
-        <p>The integration can only be as good as the data behind it. Paylocity must be fully set up first.</p>
+        <h2>Build the Equivalent Reports in Paylocity</h2>
+        <p>Before any integration can be set up, the right reports need to exist in Paylocity first.</p>
       </div>
     </div>
     <div class="steps">
 
-      <div class="step-card">
+      <div class="step-card open">
         <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon blue">🏗️</div>
+          <div class="step-icon blue">&#128196;</div>
           <div class="step-title">
-            <strong>Paylocity Must Be Production-Ready Before Integration</strong>
-            <span>Do not connect Datarails to an incomplete system</span>
+            <strong>Work with Your Paylocity Team to Create the Reports</strong>
+            <span>Every field identified in Step 2 must exist in a Paylocity report before the integration can begin</span>
           </div>
           <div class="step-toggle">+</div>
         </div>
         <div class="step-body">
-          <p>Connecting Datarails to Paylocity is straightforward — but connecting to a Paylocity instance that is still being configured will result in incomplete, incorrect, or unstable data flowing into your forecasts.</p>
-          <div class="callout critical">
-            <strong>🔴 Important</strong>
-            Datarails can establish a data connection to any configured source. However, the connection does not guarantee the data is correct, complete, or structured the way your models expect. A successful connection ≠ a valid data migration.
+          <p>The Datarails integration with Paylocity works by reading structured report files. This means Paylocity needs to have the right reports built and configured before anything can be connected. Think of it as: if the report doesn&rsquo;t exist in Paylocity, the data simply won&rsquo;t be available to Datarails.</p>
+          <div class="callout warning">
+            <strong>&#128204; What You Need to Do</strong>
+            Share the confirmed field list from Step 2 with your Paylocity implementation team. Ask them to build the equivalent of: (1) the Employee Information Report — including all employee fields and benefits cost fields, and (2) the 401k Report — including Associate ID and contribution percentage fields. Confirm each report contains the exact fields needed before moving to Step 4.
           </div>
-          <p><strong>Before proceeding, confirm with your Paylocity implementation team:</strong></p>
           <ul class="checklist" id="cl4">
-            <li onclick="toggleCheck(this)">All employee records have been migrated from ADP into Paylocity</li>
-            <li onclick="toggleCheck(this)">Historical data (past hire dates, term dates) is fully loaded — not just current employees</li>
-            <li onclick="toggleCheck(this)">Department / Cost Center structure matches or has been remapped</li>
-            <li onclick="toggleCheck(this)">Paylocity is live and being maintained as the system of record (not ADP)</li>
-            <li onclick="toggleCheck(this)">A Paylocity admin has confirmed the implementation is complete</li>
+            <li onclick="toggleCheck(this)">Share the Step 2 field list with your Paylocity team</li>
+            <li onclick="toggleCheck(this)">Confirm Paylocity Employee Report is built with all required fields</li>
+            <li onclick="toggleCheck(this)">Confirm benefits cost fields are included in the employee report — or clarify if they will be a separate report</li>
+            <li onclick="toggleCheck(this)">Confirm Paylocity 401k Report is built with Associate ID and contribution % fields</li>
+            <li onclick="toggleCheck(this)">Spot-check a sample of employee records to confirm data looks correct and complete</li>
           </ul>
-        </div>
-      </div>
-
-      <div class="step-card">
-        <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon blue">🔌</div>
-          <div class="step-title">
-            <strong>Obtain Paylocity API / Integration Credentials</strong>
-            <span>Datarails will need access credentials to establish the connection</span>
-          </div>
-          <div class="step-toggle">+</div>
-        </div>
-        <div class="step-body">
-          <p>To set up the Datarails integration, you will need credentials or connection details from the Paylocity system. Your Paylocity admin or IT team will need to provide these.</p>
-          <ul class="checklist" id="cl5">
-            <li onclick="toggleCheck(this)">Confirm Paylocity API access is enabled for your account</li>
-            <li onclick="toggleCheck(this)">Obtain Client ID and Client Secret (or equivalent credentials)</li>
-            <li onclick="toggleCheck(this)">Confirm which data endpoints are available (e.g., employee, payroll, time)</li>
-            <li onclick="toggleCheck(this)">Verify data permissions — ensure the integration user can access all needed tables</li>
-          </ul>
-          <div class="callout info">
-            <strong>ℹ️ Note</strong>
-            Your Datarails customer success team (that's us!) can guide you through the specific steps to configure the Paylocity connector once credentials are ready.
-          </div>
         </div>
       </div>
 
@@ -739,56 +794,32 @@
     <div class="section-header">
       <div class="section-number">STEP 04</div>
       <div class="section-title-group">
-        <h2>Reconnect the Data Source in Datarails</h2>
-        <p>Set up the new Paylocity integration and rebuild your ETL pipeline.</p>
+        <h2>Set Up the SFTP Integration</h2>
+        <p>Once your Paylocity reports are ready, connect them to Datarails using a scheduled file transfer.</p>
       </div>
     </div>
     <div class="steps">
 
-      <div class="step-card">
+      <div class="step-card open">
         <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon purple">⚙️</div>
+          <div class="step-icon blue">&#128225;</div>
           <div class="step-title">
-            <strong>Add Paylocity as a New Data Source</strong>
-            <span>Do not delete ADP until Paylocity is fully validated</span>
+            <strong>What Is SFTP and How Does It Work?</strong>
+            <span>A plain-English explanation for finance teams</span>
           </div>
           <div class="step-toggle">+</div>
         </div>
         <div class="step-body">
-          <div class="callout success">
-            <strong>✅ Best Practice</strong>
-            Keep your ADP integration active while you set up and test Paylocity in parallel. Only decommission ADP once you have confirmed that Paylocity data is complete and your models are working correctly.
+          <p>SFTP stands for <strong>Secure File Transfer Protocol</strong>. You don&rsquo;t need to be technical to understand how it works — think of it like a scheduled file drop.</p>
+          <div class="callout info">
+            <strong>&#8505;&#65039; How It Works — Step by Step</strong>
+            <br><br>
+            <strong>1. Paylocity builds your report</strong> — Once your reports are configured in Paylocity (from Step 3), you set a schedule for when Paylocity should automatically generate and export an updated version of each report. For example, every night at midnight, or every Monday morning.<br><br>
+            <strong>2. Paylocity pushes the file to a secure server</strong> — On that schedule, Paylocity automatically sends the updated report file to a secure location called an SFTP server. This is a protected file storage area — like a locked dropbox that only authorised systems can access.<br><br>
+            <strong>3. Datarails picks it up</strong> — Datarails monitors that SFTP server. When a new file arrives, it automatically pulls the file into your Datarails file inbox and makes the updated data available to your models and reports.<br><br>
+            The result: <strong>your Datarails headcount data updates automatically on the schedule you set</strong>, with no manual exports or uploads needed.
           </div>
-          <ul class="checklist" id="cl6">
-            <li onclick="toggleCheck(this)">In Datarails, add Paylocity as a new integration (do not replace ADP yet)</li>
-            <li onclick="toggleCheck(this)">Perform an initial data sync and review the raw tables available</li>
-            <li onclick="toggleCheck(this)">Confirm the expected tables and fields are present in the Paylocity dataset</li>
-            <li onclick="toggleCheck(this)">Compare row counts between ADP and Paylocity for the same employee population</li>
-          </ul>
-        </div>
-      </div>
 
-      <div class="step-card">
-        <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon purple">🔧</div>
-          <div class="step-title">
-            <strong>Update ETL Steps to Reference Paylocity Fields</strong>
-            <span>Remap transformations using your field mapping document from Step 2</span>
-          </div>
-          <div class="step-toggle">+</div>
-        </div>
-        <div class="step-body">
-          <p>Using the field mapping document you built in Step 2, go through each Datarails ETL step that references ADP fields and update them to point to their Paylocity equivalents.</p>
-          <ul class="checklist" id="cl7">
-            <li onclick="toggleCheck(this)">Update all field references from ADP naming to Paylocity naming</li>
-            <li onclick="toggleCheck(this)">Update any filter values that rely on ADP-specific value codes</li>
-            <li onclick="toggleCheck(this)">Update any JOIN keys to use Paylocity's employee identifier</li>
-            <li onclick="toggleCheck(this)">Re-test each ETL step individually before running the full pipeline</li>
-          </ul>
-          <div class="callout warning">
-            <strong>📌 Tip</strong>
-            Make a copy of your existing ETL pipeline before making changes. This gives you a rollback point if something goes wrong during the transition.
-          </div>
         </div>
       </div>
 
@@ -800,52 +831,29 @@
     <div class="section-header">
       <div class="section-number">STEP 05</div>
       <div class="section-title-group">
-        <h2>Validate the New Data</h2>
-        <p>Do not trust the new data until you have compared it against what you know to be true.</p>
+        <h2>Test the Connection &amp; Validate the Data</h2>
+        <p>Work with your Datarails integration specialist to confirm the files are flowing correctly and the data looks right.</p>
       </div>
     </div>
     <div class="steps">
 
-      <div class="step-card">
+      <div class="step-card open">
         <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon green">✅</div>
+          <div class="step-icon green">&#128202;</div>
           <div class="step-title">
-            <strong>Run a Side-by-Side Data Comparison</strong>
-            <span>ADP vs. Paylocity — same date range, same population</span>
+            <strong>Spot-Check the Incoming Data</strong>
+            <span>Make sure the data arriving from Paylocity looks correct before remapping</span>
           </div>
           <div class="step-toggle">+</div>
         </div>
         <div class="step-body">
-          <p>The best way to validate the new data is to run your existing reports using Paylocity data and compare the results to the last known-good output from ADP.</p>
-          <ul class="checklist" id="cl8">
-            <li onclick="toggleCheck(this)">Total active headcount — does it match between ADP and Paylocity?</li>
-            <li onclick="toggleCheck(this)">Headcount by department — do the breakdowns align?</li>
-            <li onclick="toggleCheck(this)">New hires and terminations in a given month — do counts match?</li>
-            <li onclick="toggleCheck(this)">Any employees in ADP that are missing from Paylocity?</li>
-            <li onclick="toggleCheck(this)">Any unexpected employees appearing in Paylocity that weren't in ADP?</li>
-          </ul>
-          <div class="callout critical">
-            <strong>🔴 Red Flag</strong>
-            If headcount numbers differ between the two systems, do not proceed. This indicates either incomplete data migration in Paylocity, or a structural mismatch in how active employees are defined. Escalate to the Paylocity implementation team before going live.
-          </div>
-        </div>
-      </div>
-
-      <div class="step-card">
-        <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon green">📊</div>
-          <div class="step-title">
-            <strong>Validate Historical Data Integrity</strong>
-            <span>Forecasting depends on history — make sure it transferred correctly</span>
-          </div>
-          <div class="step-toggle">+</div>
-        </div>
-        <div class="step-body">
-          <p>Headcount forecasting models often depend on historical trends. Confirm that Paylocity contains the historical records your models need — not just current employees.</p>
-          <ul class="checklist" id="cl9">
-            <li onclick="toggleCheck(this)">Historical hire and term dates are present for past employees</li>
-            <li onclick="toggleCheck(this)">Department history is available (if employees changed departments)</li>
-            <li onclick="toggleCheck(this)">Data goes back far enough for your forecasting horizon (e.g., 2–3 years)</li>
+          <p>Before rebuilding the mapper, do a quick sense-check on the raw Paylocity data to catch any obvious issues early.</p>
+          <ul class="checklist" id="cl7">
+            <li onclick="toggleCheck(this)">Total employee count in the Paylocity file matches expected headcount</li>
+            <li onclick="toggleCheck(this)">Department values look correct and consistent (no unexpected names or blanks)</li>
+            <li onclick="toggleCheck(this)">Position Status values are present and match the expected format</li>
+            <li onclick="toggleCheck(this)">Associate ID column is populated for all employees with no blanks</li>
+            <li onclick="toggleCheck(this)">Benefits cost fields are present and contain numeric values, not blanks</li>
           </ul>
         </div>
       </div>
@@ -858,32 +866,55 @@
     <div class="section-header">
       <div class="section-number">STEP 06</div>
       <div class="section-title-group">
-        <h2>Rebuild or Update Existing Forecasts & Reports</h2>
-        <p>Once data is validated, update your Datarails models to use Paylocity as the live source.</p>
+        <h2>Recreate the Field Mapping in Datarails</h2>
+        <p>Duplicate and update the ADP data mapper to work with Paylocity — the final step before going live.</p>
       </div>
     </div>
     <div class="steps">
 
-      <div class="step-card">
+      <div class="step-card open">
         <div class="step-card-header" onclick="toggleCard(this)">
-          <div class="step-icon red">📈</div>
+          <div class="step-icon purple">&#128260;</div>
           <div class="step-title">
-            <strong>Update Headcount Forecasting Models</strong>
-            <span>Reconnect forecast logic to Paylocity as the source of record</span>
+            <strong>Duplicate the ADP Mapper and Point It to Paylocity</strong>
+            <span>Your Datarails CSM will guide you through this — training is provided</span>
           </div>
           <div class="step-toggle">+</div>
         </div>
         <div class="step-body">
-          <ul class="checklist" id="cl10">
-            <li onclick="toggleCheck(this)">Identify all reports and dashboards that reference ADP headcount data</li>
-            <li onclick="toggleCheck(this)">Update data source references from ADP to Paylocity in each model</li>
-            <li onclick="toggleCheck(this)">Re-run forecasts and compare outputs to last ADP-based version</li>
-            <li onclick="toggleCheck(this)">Get sign-off from finance stakeholder that numbers look correct</li>
-            <li onclick="toggleCheck(this)">Archive the ADP-based version before deactivating the integration</li>
+          <p>In Datarails, the data mapper is what tells the system how to read and interpret the incoming file — which columns to use, what they mean, and how they connect to your model. Rather than building this from scratch, the process is to <strong>duplicate your existing ADP mapper</strong> and update it to reference the Paylocity file instead.</p>
+          <div class="callout info">
+            <strong>&#8505;&#65039; What This Involves</strong>
+            Your Datarails CSM will provide training on how to duplicate and update a data mapper. In most cases, if the Paylocity field names and values are well-aligned with ADP (as confirmed in Step 2), this step is straightforward and quick. The mapper is updated to point to the new Paylocity file source, column names are updated where needed, and the data starts flowing into your existing models immediately.
+          </div>
+          <ul class="checklist" id="cl8">
+            <li onclick="toggleCheck(this)">Schedule a mapper training session with your Datarails CSM</li>
+            <li onclick="toggleCheck(this)">Duplicate the existing ADP data mapper in Datarails</li>
+            <li onclick="toggleCheck(this)">Update the data source to point to the incoming Paylocity file</li>
+            <li onclick="toggleCheck(this)">Update any column name references that differ between ADP and Paylocity</li>
+            <li onclick="toggleCheck(this)">Run a test extract and confirm data is populating correctly in your models</li>
           </ul>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header" onclick="toggleCard(this)">
+          <div class="step-icon purple">&#9888;&#65039;</div>
+          <div class="step-title">
+            <strong>If ADP and Paylocity Data Don&rsquo;t Align — Expect Extra Work</strong>
+            <span>Mismatched field values add significant configuration complexity</span>
+          </div>
+          <div class="step-toggle">+</div>
+        </div>
+        <div class="step-body">
+          <p>If all the groundwork from Steps 1&ndash;3 was done carefully — particularly confirming that key field values like department names, status codes, and worker categories are consistent — then this final mapping step should be quick and clean.</p>
+          <div class="callout critical">
+            <strong>&#128308; If Field Values Don&rsquo;t Match — The Complexity Goes Up</strong>
+            If Paylocity uses different values for key fields (e.g., department names have changed, status codes are different), the mapper alone cannot fix this. Each mismatched value will require custom lookup tables or transformation logic to be built in Datarails. This adds time, requires involvement from your Datarails integration specialist, and increases the risk of errors in your forecasts during the transition. <strong>This is why aligning field values in Paylocity before go-live (Step 2) is the single most important thing you can do to keep this project on track.</strong>
+          </div>
           <div class="callout success">
-            <strong>✅ Final Step</strong>
-            Once all reports are validated and stakeholders have signed off, you can safely deactivate the ADP integration in Datarails. Keep it inactive (not deleted) for 30 days as a safety net before fully removing it.
+            <strong>&#9989; Best Case Scenario</strong>
+            Field values are consistent, column names are updated in the mapper, and the Paylocity data flows cleanly into your existing headcount models with minimal rework. Your reports and forecasts continue working as before — just now powered by Paylocity.
           </div>
         </div>
       </div>
@@ -922,6 +953,21 @@
   function setActive(link) {
     document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
     link.classList.add('active');
+  }
+
+  const STATES = [
+    { key: null,      label: 'Unconfirmed',          cls: '' },
+    { key: 'exact',   label: '&#10003; Exact match', cls: 'exact' },
+    { key: 'diff',    label: '&#9432; Exists — different', cls: 'diff' },
+    { key: 'missing', label: '&#10005; Not found',   cls: 'missing' },
+  ];
+  function cycleConfirm(btn) {
+    const current = btn.dataset.state || '';
+    const idx = STATES.findIndex(s => s.key === (current || null));
+    const next = STATES[(idx + 1) % STATES.length];
+    btn.dataset.state = next.key || '';
+    btn.className = 'confirm-btn' + (next.cls ? ' ' + next.cls : '');
+    btn.innerHTML = '<span class="confirm-dot"></span>' + next.label;
   }
 
   // Highlight nav on scroll
